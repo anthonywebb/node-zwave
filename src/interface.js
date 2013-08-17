@@ -109,8 +109,8 @@ messageHandler.sendMessage = function(messageArray, responseType, listener, isPe
         listener: listener
   }
   
-  //console.log(logmsg);
-  //console.log(messageArray);
+  console.log(logmsg);
+  console.log(messageArray);
   
   var buffer = new Buffer(messageArray);
   serialPort.write(buffer);
@@ -124,6 +124,9 @@ messageHandler.sendAck = function() {
 function listener(data) {
   console.log('Receiving data from zwave controller');
   console.log(data);
+  
+  // sometimes the data will come bundled with a leading ack, if so we need to strip it
+  
   if(data[0] == globals.ACK) {
     console.log('Received ACK for request');
     if(currentRequest.responseType == 'none') {

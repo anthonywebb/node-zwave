@@ -11,7 +11,7 @@ promise.then(function(connection) {
   nodes.then(function(data){
     console.log('woot! '+data);
   });
-  */
+  
 
   zwave.getNodes(function(data){
     //console.log('Woot!! '+data);
@@ -22,8 +22,9 @@ promise.then(function(connection) {
         zwave.getNodeProtocol(data[i],function(node){console.log(node);});
     }
   });
+  */
   
-  //zwave.getNodeProtocol(1,function(node){console.log(node);});
+  zwave.addNodeToNetwork(3,function(node){console.log(node);});
   //zwave.getNodeProtocol(2,function(node){console.log(node);});
   //zwave.getNodeProtocol(3,function(node){console.log(node);});
   //zwave.getNodeAbilities(2);

@@ -33,25 +33,6 @@ function getNodes(cb) {
 
 }
 
-function addNodeToNetwork(nodeId, cb) {
-  console.log('Adding node to network ' + nodeId);
-
-  var command = [
-    0x01,
-    0x04, // Length, including checksum which is added after
-    0x00,
-    defs.ADD_NODE_TO_NETWORK,
-    nodeId
-  ];
-
-  var promise = iface.sendMessage(command, listener);
-  if(typeof callback === 'function') {
-    promise.then(callback);
-  }
-  return promise;
-
-}
-
 function getNodeAbilities(nodeId, cb) {
   console.log('Getting node abilities for node ' + nodeId);
 
@@ -117,6 +98,32 @@ function getNodeProtocol(nodeId, cb) {
 
 }
 
+function addNodeToNetwork(nodeId, cb) {
+    console.log('Adding node to network ' + nodeId);
+    
+    var command = [
+    0x01,
+    0x04, // Length, including checksum which is added after
+    0x00,
+    defs.ADD_NODE_TO_NETWORK,
+    nodeId
+    ];
+    
+    var promise = iface.sendMessage(command, 'request', listener);
+    promise.then(function(data){
+
+        var returnInfo = data;
+        
+        console.log(returnInfo);
+        if(typeof cb === 'function') {
+            cb(returnInfo);
+        }
+    }).catch(function (error) {
+        console.log(error);
+    });
+
+}
+
 function getNodeSupportedClasses(nodeId, cb) {
   console.log('Getting node supported classes for node ' + nodeId);
 
@@ -147,5 +154,6 @@ module.exports = {
   getNodeAbilities: getNodeAbilities,
   getNodeInfo: getNodeInfo,
   getNodeProtocol: getNodeProtocol,
-  getNodeSupportedClasses: getNodeSupportedClasses
+  getNodeSupportedClasses: getNodeSupportedClasses,
+  addNodeToNetwork: addNodeToNetwork
 }
