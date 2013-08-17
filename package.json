@@ -24,7 +24,8 @@
   "gitHead": "54eb3808258d8b2da247407479cde7cf4c0bdfe1",
   "dependencies": {
     "moment": "~2.0.0",
-    "q": "~0.9.3"
+    "q": "~0.9.3",
+    "serialport": "latest"
   },
   "devDependencies": {
   }

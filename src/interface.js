@@ -34,11 +34,11 @@ function generateChecksum(data) {
 }
 
 function runPendingRequest() {
-  console.log('Running pending request...');
-  console.log(pendingRequests);
+  //console.log('Running pending request...');
+  //console.log(pendingRequests);
   if(pendingRequests.length) {
     var request = pendingRequests.shift();
-    messageHandler.sendMessage(request.message, request.responseType, request.listener);
+    messageHandler.sendMessage(request.message, request.responseType, request.listener, request.deferred);
   }
 }
 
@@ -69,39 +69,49 @@ messageHandler.connect = function(serialPortAddress, callback) {
   return deferred.promise;
 }
 
-messageHandler.sendMessage = function(messageArray, responseType, listener, useCallback) {
+messageHandler.sendMessage = function(messageArray, responseType, listener, isPending, useCallback) {
+  var deferred = Q.defer();
+  
   if(typeof responseType === 'function') {
     listener = responseType;
     responseType = 'response';
   }
   if(currentState !== 'ready') {
-    console.log('Adding request to pending requests...');
+    //console.log('Adding request to pending requests...');
     pendingRequests.push({
       message: messageArray,
       responseType: responseType,
-      listener: listener
+      listener: listener,
+      deferred: deferred // will need this when you call back later
     });
-    return;
+    return deferred.promise; // have to return the promise so we know which request to call back
   }
   currentState = 'pendingAck';
-
-  var deferred = Q.defer();
   
   if(useCallback) {
     messageArray.push(createCallbackId());
   }
   messageArray.push(generateChecksum(messageArray));
   messageArray[1] = messageArray.length - 2;
-
-  console.log('Sending message to zwave controller');
-  console.log(messageArray);
-
-  currentRequest = {
-    responseType: responseType,
-    defer: deferred,
-    time: moment(),
-    listener: listener
+  
+  var logmsg = 'Sending message to zwave controller';
+  
+  // pending requests have a different promise to worry about
+  if(isPending){
+      deferred = isPending;  
+      logmsg = 'Sending queued messages to zwave controller';
   }
+  
+  currentRequest = {
+        responseType: responseType,
+        defer: deferred,
+        time: moment(),
+        listener: listener
+  }
+  
+  //console.log(logmsg);
+  //console.log(messageArray);
+  
   var buffer = new Buffer(messageArray);
   serialPort.write(buffer);
   return deferred.promise;
@@ -131,6 +141,7 @@ function listener(data) {
     console.log('Received response for request');
     messageHandler.sendAck();
     currentRequest.listener(data);
+    currentRequest.defer.resolve(data);
     currentState = 'ready';
     currentRequest = null;
     runPendingRequest();
@@ -138,6 +149,7 @@ function listener(data) {
   }
   else {
     messageHandler.sendAck();
+    console.log('Catch broadcasted events here…');
     // Catch broadcasted events here...
   }
 }

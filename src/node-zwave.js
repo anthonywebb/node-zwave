@@ -7,7 +7,11 @@ var functions = require('./functions/functions');
 var zwave = {};
 
 // Basic functions
+zwave.getNodes = functions.getNodes;
 zwave.getNodeAbilities = functions.getNodeAbilities;
+zwave.getNodeInfo = functions.getNodeInfo;
+zwave.getNodeProtocol = functions.getNodeProtocol;
+zwave.getNodeSupportedClasses = functions.getNodeSupportedClasses;
 
 zwave.connect = iface.connect;
 zwave.thermostat = cc.thermostat;
