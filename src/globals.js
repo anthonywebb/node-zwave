@@ -2,6 +2,7 @@
 var g = {};
 
 g.ACK = 0x06;
+g.NAK = 0x15;
 
 g.AUTO_ACK = 0x05;
 g.OPTION_ACK = 0x01;

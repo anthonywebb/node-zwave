@@ -103,10 +103,17 @@ function addNodeToNetwork(nodeId, cb) {
     
     var command = [
     0x01,
-    0x04, // Length, including checksum which is added after
+    0x0B, // Length, including checksum which is added after
     0x00,
-    defs.ADD_NODE_TO_NETWORK,
-    nodeId
+    defs.DATA,
+    nodeId,
+    0x04,
+    0x85,
+    0x01,
+    0x01,
+    0x01,
+    0x05,
+    0x03
     ];
     
     var promise = iface.sendMessage(command, 'request', listener);

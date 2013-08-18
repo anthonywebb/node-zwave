@@ -126,8 +126,13 @@ function listener(data) {
   console.log(data);
   
   // sometimes the data will come bundled with a leading ack, if so we need to strip it
-  
-  if(data[0] == globals.ACK) {
+  if(data[0] == globals.NAK) {
+    currentRequest.defer.resolve(false);
+    currentState = 'ready';
+    currentRequest = null;
+    runPendingRequest()
+  }
+  else if(data[0] == globals.ACK) {
     console.log('Received ACK for request');
     if(currentRequest.responseType == 'none') {
       currentRequest.defer.resolve(true);
@@ -151,8 +156,14 @@ function listener(data) {
     return;
   }
   else {
-    messageHandler.sendAck();
     console.log('Catch broadcasted events here…');
+    messageHandler.sendAck();
+    if(currentRequest){
+        currentRequest.defer.resolve(false);
+    }
+    currentState = 'ready';
+    currentRequest = null;
+    runPendingRequest()
     // Catch broadcasted events here...
   }
 }
