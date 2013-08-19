@@ -173,6 +173,8 @@ function listener(data) {
     // these are energy reports for the HEM nodeid 3:  / 
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 64 00 00 00 00 02 d0 00 00 00 00 3b>
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 74 00 04 a4 16 00 00 00 00 00 00 4f>
+    // <Buffer 01 18 00 04 00 02 12 60 0d 01 00 32 02 21 64 00 00 00 00 02 d0 00 00 00 00 38>
+    // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 74 00 03 c3 5c 00 00 00 00 00 00 65>
     
     
     // Catch broadcasted events here...
