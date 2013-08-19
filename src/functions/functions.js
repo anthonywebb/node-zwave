@@ -1,6 +1,32 @@
 var iface = require('../interface');
 var defs = require('./definitions');
 
+function sendData(nodeId,cmd,cb) {
+    console.log('Sending command data');
+
+    var command = [
+        0x01,
+        0x00, // calculated after we get a command
+        0x00,
+        defs.DATA,
+        nodeId // nodeid
+    ];
+    
+    command = command.concat(cmd);
+    command.push(0x05);
+    command.push(0x03);
+    
+    command[1] = parseInt(command.length-1);
+    
+    console.log(command);
+    
+    var promise = iface.sendMessage(command, 'request', listener);
+    promise.then(function(data){
+        cb(data);
+    });
+
+}
+
 function getNodes(cb) {
     console.log('Getting list of nodes');
 
@@ -86,7 +112,7 @@ function getNodeProtocol(nodeId, cb) {
     promise.then(function(data){
 
         var returnInfo = defs.DEVICE_TYPE[data[8]];
-        returnInfo.id = nodeId;
+        returnInfo.nodeid = nodeId;
         
         console.log(returnInfo);
         if(typeof cb === 'function') {
@@ -98,22 +124,22 @@ function getNodeProtocol(nodeId, cb) {
 
 }
 
-function addNodeToNetwork(nodeId, cb) {
+function associateNode(nodeId, cb) {
     console.log('Adding node to network ' + nodeId);
     
     var command = [
-    0x01,
-    0x0B, // Length, including checksum which is added after
-    0x00,
-    defs.DATA,
-    nodeId,
-    0x04,
-    0x85,
-    0x01,
-    0x01,
-    0x01,
-    0x05,
-    0x03
+        0x01, // SOC
+        0x0B, // length (11), including the checksum which is added later
+        0x00, // request
+        defs.DATA, // sending data
+        nodeId, // nodeid
+        0x04, // ??
+        0x85, // COMMAND_CLASS_ASSOCIATION
+        0x01, // ASSOCIATION_SET
+        0x01, // _groupIdx
+        0x01, // _targetNodeId
+        0x05, // ??
+        0x03 // ??
     ];
     
     var promise = iface.sendMessage(command, 'request', listener);
@@ -162,5 +188,6 @@ module.exports = {
   getNodeInfo: getNodeInfo,
   getNodeProtocol: getNodeProtocol,
   getNodeSupportedClasses: getNodeSupportedClasses,
-  addNodeToNetwork: addNodeToNetwork
+  associateNode: associateNode,
+  sendData: sendData
 }

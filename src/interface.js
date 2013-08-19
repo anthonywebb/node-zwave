@@ -156,8 +156,18 @@ function listener(data) {
     return;
   }
   else {
-    console.log('Catch broadcasted events here…');
+    console.log('Catch broadcasted events here: '+moment());
     messageHandler.sendAck();
+    
+    // lets parse out this packet and try and figure out what it is:
+    
+    // these are the door open/close for nodeid 3: <Buffer 01 09 00 04 00 03 03 20 01 ff 2c> / <Buffer 01 09 00 04 00 03 03 20 01 00 d3>
+    if(data[3]==0x04 && data.length==11){
+        var currentVal = (data[10] == 211 ? 0 : 255); // 0x00 == 211, which is closed, else the door is open
+        var emitVal = {nodeid:parseInt(data[5],16),value:currentVal};
+        console.log(emitVal);
+    }
+    
     if(currentRequest){
         currentRequest.defer.resolve(false);
     }

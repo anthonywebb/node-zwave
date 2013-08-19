@@ -11,7 +11,8 @@ zwave.getNodeAbilities = functions.getNodeAbilities;
 zwave.getNodeInfo = functions.getNodeInfo;
 zwave.getNodeProtocol = functions.getNodeProtocol;
 zwave.getNodeSupportedClasses = functions.getNodeSupportedClasses;
-zwave.addNodeToNetwork = functions.addNodeToNetwork;
+zwave.associateNode = functions.associateNode;
+zwave.sendData = functions.sendData;
 
 zwave.connect = iface.connect;
 zwave.thermostat = cc.thermostat;

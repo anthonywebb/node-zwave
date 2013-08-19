@@ -12,7 +12,7 @@ promise.then(function(connection) {
     console.log('woot! '+data);
   });
   
-
+ */
   zwave.getNodes(function(data){
     //console.log('Woot!! '+data);
     //console.log(data);
@@ -22,9 +22,12 @@ promise.then(function(connection) {
         zwave.getNodeProtocol(data[i],function(node){console.log(node);});
     }
   });
-  */
+ 
   
-  zwave.addNodeToNetwork(3,function(node){console.log(node);});
+  //zwave.sendData(2,[0x70,0x04,0x65,0x04,0x00,0x00,0x00,0x04],function(reply){console.log(reply);}); //have group 1 report watts automatically 
+  //zwave.sendData(2,[0x70,0x04,0x6F,0x04,0x00,0x00,0x00,0x05],function(reply){console.log(reply);}); //set the reporting interval
+  
+  //zwave.associateNode(2,function(node){console.log(node);});
   //zwave.getNodeProtocol(2,function(node){console.log(node);});
   //zwave.getNodeProtocol(3,function(node){console.log(node);});
   //zwave.getNodeAbilities(2);
