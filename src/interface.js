@@ -125,7 +125,7 @@ function listener(data) {
   console.log('Receiving data from zwave controller');
   console.log(data);
   
-  // sometimes the data will come bundled with a leading ack, if so we need to strip it
+  // TODO: sometimes the data will come bundled with a leading ack, if so we need to strip it
   if(data[0] == globals.NAK) {
     currentRequest.defer.resolve(false);
     currentState = 'ready';
@@ -156,7 +156,7 @@ function listener(data) {
     return;
   }
   else {
-    console.log('Catch broadcasted events here: '+moment());
+    console.log('Catch broadcasted events here: '+moment().format('MMMM Do YYYY, h:mm:ss a'));
     messageHandler.sendAck();
     
     // lets parse out this packet and try and figure out what it is:
@@ -167,13 +167,7 @@ function listener(data) {
         var emitVal = {nodeid:parseInt(data[5],16),value:currentVal};
         console.log(emitVal);
     }
-    
-    if(currentRequest){
-        currentRequest.defer.resolve(false);
-    }
-    currentState = 'ready';
-    currentRequest = null;
-    runPendingRequest()
+
     // Catch broadcasted events here...
   }
 }

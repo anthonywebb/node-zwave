@@ -9,7 +9,35 @@ function sendData(nodeId,cmd,cb) {
         0x00, // calculated after we get a command
         0x00,
         defs.DATA,
-        nodeId // nodeid
+        nodeId, // nodeid
+        2 // This was required to get the HEM get value call working, probably breaks other stuff
+    ];
+    
+    command = command.concat(cmd);
+    command.push(0x05);
+    command.push(0x03);
+    
+    command[1] = parseInt(command.length-1);
+    
+    console.log(command);
+    
+    var promise = iface.sendMessage(command, 'request', listener);
+    promise.then(function(data){
+        cb(data);
+    });
+
+}
+
+function sendConfigData(nodeId,cmd,cb) {
+    console.log('Sending command data');
+
+    var command = [
+        0x01,
+        0x00, // calculated after we get a command
+        0x00,
+        defs.DATA,
+        nodeId, // nodeid
+        4+cmd[3] // This was required to get the HEM configuration working, probably breaks other stuff
     ];
     
     command = command.concat(cmd);
@@ -189,5 +217,6 @@ module.exports = {
   getNodeProtocol: getNodeProtocol,
   getNodeSupportedClasses: getNodeSupportedClasses,
   associateNode: associateNode,
-  sendData: sendData
+  sendData: sendData,
+  sendConfigData: sendConfigData
 }
