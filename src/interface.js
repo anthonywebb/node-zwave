@@ -175,10 +175,64 @@ function listener(data) {
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 74 00 04 a4 16 00 00 00 00 00 00 4f>
     // <Buffer 01 18 00 04 00 02 12 60 0d 01 00 32 02 21 64 00 00 00 00 02 d0 00 00 00 00 38>
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 74 00 03 c3 5c 00 00 00 00 00 00 65>
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 47 7e 00 00 00 00 00 00 92>
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 57 64 00 00 00 00 00 00 98>
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 71 9a 00 00 00 00 00 00 40>
     
+    if(data[7]==0x32 && data.length==22){
+        console.log('looks like a meter reading');
+        // data[10] has the precision(3bits)/scale(2bits)/size(3bits)
+        var x = pad(toBinary(parseInt(data[10], 10)),8);
+        //console.log(parseInt(data[10], 10)+' = '+x);
+        var precision = Bin2Dec(x.substring(0, 3));
+        var scale = Bin2Dec(x.substring(3, 5));
+        var size = Bin2Dec(x.substring(5));
+        console.log('precision:'+precision+' scale:'+scale+' size:'+size);
+        
+        // grab the next x hex to concat and find  our reading
+        var reading = '';
+        for(var i=11; i < 11+parseInt(size); i++){
+            var thisReading = pad(toBinary(parseInt(data[i], 10)),8);
+            //console.log(parseInt(data[i], 10)+' = '+x);
+            reading = reading + thisReading;
+        }
+        //console.log(reading);
+        var emitVal = Bin2Dec(reading);
+        emitVal /= Math.pow(10, precision); // move the decimal over
+        console.log(emitVal);
+        
+    }
     
     // Catch broadcasted events here...
   }
 }
+
+function toBinary(Decimal){
+ var bnum = 0, bexp = 1, digit = 0, bsum = 0;
+ while(Decimal > 0){
+  digit = Decimal % 2;
+  Decimal = Math.floor(Decimal / 2);
+  bsum = bsum + digit * bexp;
+  bexp = bexp * 10;
+ }
+ return(bsum);
+}
+function checkBin(n){return/^[01]{1,64}$/.test(n)}
+function checkDec(n){return/^[0-9]{1,64}$/.test(n)}
+function checkHex(n){return/^[0-9A-Fa-f]{1,64}$/.test(n)}
+
+function pad(s,z){s=""+s;return s.length<z?pad("0"+s,z):s}
+
+//Decimal operations
+function Dec2Bin(n){if(!checkDec(n)||n<0)return 0;return n.toString(2)}
+function Dec2Hex(n){if(!checkDec(n)||n<0)return 0;return n.toString(16)}
+
+//Binary Operations
+function Bin2Dec(n){if(!checkBin(n))return 0;return parseInt(n,2).toString(10)}
+function Bin2Hex(n){if(!checkBin(n))return 0;return parseInt(n,2).toString(16)}
+
+//Hexadecimal Operations
+function Hex2Bin(n){if(!checkHex(n))return 0;return parseInt(n,16).toString(2)}
+function Hex2Dec(n){if(!checkHex(n))return 0;return parseInt(n,16).toString(10)}
 
 module.exports = messageHandler;
