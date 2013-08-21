@@ -5,6 +5,9 @@ var globals = require('./globals');
 var Q = require('q');
 var moment = require('moment');
 
+var powerUsed = 0;
+var lastPowerRead = moment();
+
 var currentCallbackId = 1;
 var currentState = 'ready'; // ready || pendingAck || pendingResponse
 var pendingRequests = []; // If current state is not ready, store pending requests here. First in first out.
@@ -201,8 +204,17 @@ function listener(data) {
         emitVal /= Math.pow(10, precision); // move the decimal over
         console.log(emitVal);
         
+        // add to the amount of power used
+        var thisPowerRead = moment();
+        var powerSinceLast = ((thisPowerRead.diff(lastPowerRead)/3600000)*emitVal)/1000;
+        powerUsed = powerUsed+powerSinceLast*1;
+        lastPowerRead = thisPowerRead;
+        console.log('THIS power used: '+powerSinceLast);
+        console.log('TOTAL power used: '+powerUsed.toFixed(2));
+        
     }
     
+    runPendingRequest();
     // Catch broadcasted events here...
   }
 }
