@@ -4,9 +4,10 @@
 var globals = require('./globals');
 var Q = require('q');
 var moment = require('moment');
+var nedb = require('nedb'); 
 
-var powerUsed = 0;
-var lastPowerRead = moment();
+// load up the database
+var db = new nedb({ filename: './database', autoload: true });
 
 var currentCallbackId = 1;
 var currentState = 'ready'; // ready || pendingAck || pendingResponse
@@ -15,7 +16,54 @@ var currentRequest = null; // The current request
 
 var serialPort = null;
 var messageHandler = {}; // Object to export
-var SerialPort = require("serialport").SerialPort;
+var serialport = require("serialport");
+var SerialPort = serialport.SerialPort;
+
+var lcd = new SerialPort("/dev/ttyO1", {parser: serialport.parsers.readline("\n") });
+lcd.on("open", function () {
+  console.log("I am connected to the lcd");
+  //sp.write("73,5,0,0,0,0,0,0,s");
+  //sp.write("06,0,15,0,0,0,s");
+});
+
+// Add the loop to insert load averages into the DB every minute
+var powerUsed = 0;
+var wattcounter = 0;
+var watttotal = 0;
+var lastkwh = 0;
+var prevmeter = 0;
+var last_hour = 0;
+var tzoffset = -6;
+setInterval(function(){
+    console.log('writing avg watts using: '+watttotal+'/'+wattcounter)
+    var avgwatts = watttotal/wattcounter;
+    
+    var thisusage = 0;
+    if(prevmeter){
+        thisusage = lastkwh-prevmeter;
+    }
+    prevmeter = lastkwh
+    
+    var insData = {timestamp: new Date(),watts:avgwatts.toFixed(3),usage:thisusage.toFixed(3),meter:lastkwh.toFixed(3)};
+    wattcounter = 0;
+    watttotal = 0;
+    db.insert(insData, function (err, newDoc) {
+        if(err){
+            console.log(err);
+        }
+        //console.log('wrote record '+newDoc._id);
+    });
+    
+    // reset the power today total if we just rolled over the clock
+    var this_hour = moment().add('h',tzoffset).format('H'); // hack the clock back to our time
+    console.log(this_hour+' this / last '+last_hour);
+    if(last_hour == 23 && this_hour == 0){
+        console.log('Rolling over the clock')
+        powerUsed = 0;
+    }
+    last_hour = this_hour;
+    
+},60000) 
 
 function createCallbackId() {
   currentCallbackId++;
@@ -173,14 +221,44 @@ function listener(data) {
         console.log(emitVal);
     }
     
+    // these are replies to a SENSOR_MULTILEVEL_REPORT
+    // <Buffer 01 0e 00 04 00 02 08 31 05 04 64 00 0b 72 78 aa>
+    if(data[7]==0x31 && data[8]==0x05 && data.length==16){
+        console.log('looks like a multilevel report');
+        // data[9] is the sensor type 0x04 is power
+        // data[10] has the precision(3bits)/scale(2bits)/size(3bits)
+        var x = pad(toBinary(parseInt(data[10], 10)),8);
+        //console.log(parseInt(data[10], 10)+' = '+x);
+        var precision = Bin2Dec(x.substring(0, 3));
+        var scale = Bin2Dec(x.substring(3, 5));
+        var size = Bin2Dec(x.substring(5));
+        console.log('precision:'+precision+' scale:'+scale+' size:'+size);
+        
+        // in this report scale is WATTS, only
+        
+        // grab the next x hex to concat and find  our reading
+        var reading = '';
+        for(var i=11; i < 11+parseInt(size); i++){
+            var thisReading = pad(toBinary(parseInt(data[i], 10)),8);
+            //console.log(parseInt(data[i], 10)+' = '+x);
+            reading = reading + thisReading;
+        }
+        //console.log(reading);
+        var emitVal = Bin2Dec(reading);
+        emitVal /= Math.pow(10, precision); // move the decimal over
+        console.log(emitVal);
+        console.log('done');
+    }
+    
     // these are energy reports for the HEM nodeid 3:  / 
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 64 00 00 00 00 02 d0 00 00 00 00 3b>
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 74 00 04 a4 16 00 00 00 00 00 00 4f>
     // <Buffer 01 18 00 04 00 02 12 60 0d 01 00 32 02 21 64 00 00 00 00 02 d0 00 00 00 00 38>
     // <Buffer 01 18 00 04 00 02 12 60 0d 02 00 32 02 21 74 00 03 c3 5c 00 00 00 00 00 00 65>
-    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 47 7e 00 00 00 00 00 00 92>
-    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 57 64 00 00 00 00 00 00 98>
-    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 71 9a 00 00 00 00 00 00 40>
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 64 00 77 9d 44 00 05 00 77 9d 44 95> // kWh (see page 183 command class spec)
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 47 7e 00 00 00 00 00 00 92> // watts
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 57 64 00 00 00 00 00 00 98> // watts
+    // <Buffer 01 14 00 04 00 04 0e 32 02 21 74 00 2b 71 9a 00 00 00 00 00 00 40> // watts
     
     if(data[7]==0x32 && data.length==22){
         console.log('looks like a meter reading');
@@ -191,6 +269,8 @@ function listener(data) {
         var scale = Bin2Dec(x.substring(3, 5));
         var size = Bin2Dec(x.substring(5));
         console.log('precision:'+precision+' scale:'+scale+' size:'+size);
+        
+        //if scale is 0 then this is kWh, if scale is 2 then it is watts
         
         // grab the next x hex to concat and find  our reading
         var reading = '';
@@ -204,13 +284,53 @@ function listener(data) {
         emitVal /= Math.pow(10, precision); // move the decimal over
         console.log(emitVal);
         
-        // add to the amount of power used
-        var thisPowerRead = moment();
-        var powerSinceLast = ((thisPowerRead.diff(lastPowerRead)/3600000)*emitVal)/1000;
-        powerUsed = powerUsed+powerSinceLast*1;
-        lastPowerRead = thisPowerRead;
-        console.log('THIS power used: '+powerSinceLast);
-        console.log('TOTAL power used: '+powerUsed.toFixed(2));
+        // next 2 bits are the delta time
+        reading = '';
+        var newindex = 11+parseInt(size);
+        for(var i=newindex; i < newindex+2; i++){
+            var thisReading = pad(toBinary(parseInt(data[i], 10)),8);
+            //console.log(parseInt(data[i], 10)+' = '+x);
+            reading = reading + thisReading;
+        }
+        var deltaval = Bin2Dec(reading);
+        console.log(deltaval);
+        
+        // next X are the previous meter value
+        reading = '';
+        newindex = newindex+2;
+        for(var i=newindex; i < newindex+parseInt(size); i++){
+            var thisReading = pad(toBinary(parseInt(data[i], 10)),8);
+            //console.log(parseInt(data[i], 10)+' = '+x);
+            reading = reading + thisReading;
+        }
+        var prevval = Bin2Dec(reading);
+        prevval /= Math.pow(10, precision); // move the decimal over
+        console.log(prevval);
+        
+        
+        var data = {timestamp: new Date()};
+        if(scale==2){
+            data.watts = emitVal;
+            
+            // convert this into a format the LCD can handle
+            var tmpPowerUsed = Math.floor(powerUsed*1000);
+            var writestr = parseInt(data.watts)%256+","+Math.floor(parseInt(data.watts)/256)+",0,0,0,0,"+parseInt(tmpPowerUsed)%256+","+Math.floor(parseInt(tmpPowerUsed)/256)+","+moment().add('h',tzoffset).format('H')+",0,"+moment().add('h',tzoffset).format('m')+",0,"+moment().add('h',tzoffset).format('s')+",0";
+            lcd.write(writestr+",s");
+            console.log(writestr);
+            wattcounter += 1;
+            watttotal += emitVal;
+            
+        }
+        else if(scale==0){
+            var usage = emitVal-prevval;
+            powerUsed = powerUsed+usage*1;
+            data.usage = usage.toFixed(3);
+            data.delta = deltaval;
+            console.log('TOTAL power used today: '+powerUsed.toFixed(3));
+            // send the power today total to the LCD?
+            
+            lastkwh = emitVal;
+        }
         
     }
     

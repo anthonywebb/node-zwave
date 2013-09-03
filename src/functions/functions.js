@@ -29,7 +29,7 @@ function sendData(nodeId,cmd,cb) {
 }
 
 function sendRequestData(nodeId,cmd,cb) {
-    console.log('Sending command data');
+    console.log('Sending request data');
 
     var command = [
         0x01,

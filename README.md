@@ -3,7 +3,7 @@ node-zwave
 
 Control your z-wave devices on node.js
 
-THIS IS NOT READY!
+THIS IS NOT READY!  IT IS IN LARGE TORN APART, HARD CODED, AND NOT USEFUL FOR ANYTHING BUT MY STUFF.
 
 This code is essentially ported from a C library that does the same thing. The C lib was written by a genius and also a close friend whose blog resides here: http://www.squarepenguin.com/wordpress/
 
