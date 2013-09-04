@@ -22,8 +22,6 @@ var SerialPort = serialport.SerialPort;
 var lcd = new SerialPort("/dev/ttyO1", {parser: serialport.parsers.readline("\n") });
 lcd.on("open", function () {
   console.log("I am connected to the lcd");
-  //sp.write("73,5,0,0,0,0,0,0,s");
-  //sp.write("06,0,15,0,0,0,s");
 });
 
 // Add the loop to insert load averages into the DB every minute
@@ -216,7 +214,7 @@ function listener(data) {
     // <Buffer 01 09 00 04 00 03 03 20 01 ff 2c>
     // <Buffer 01 09 00 04 00 03 03 20 01 00 d3>
     if(data[3]==0x04 && data.length==11){
-        var currentVal = (data[10] == 211 ? 0 : 255); // 0x00 == 211, which is closed, else the door is open
+        var currentVal = data[9]; 
         var emitVal = {nodeid:parseInt(data[5],16),value:currentVal};
         console.log(emitVal);
     }

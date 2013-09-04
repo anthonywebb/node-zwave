@@ -1,5 +1,4 @@
 var cc = require('./command_classes/');
-// var funcs = require('./functions/');
 var iface = require('./interface');
 var functions = require('./functions/functions');
 
@@ -12,12 +11,10 @@ zwave.getNodeInfo = functions.getNodeInfo;
 zwave.getNodeProtocol = functions.getNodeProtocol;
 zwave.getNodeSupportedClasses = functions.getNodeSupportedClasses;
 zwave.associateNode = functions.associateNode;
-zwave.sendData = functions.sendData;
-zwave.sendConfigData = functions.sendConfigData;
-zwave.sendRequestData = functions.sendRequestData;
 
 zwave.connect = iface.connect;
 zwave.thermostat = cc.thermostat;
+zwave.energyMonitor = cc.energyMonitor;
 
 module.exports = zwave;
 
