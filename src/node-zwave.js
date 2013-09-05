@@ -2,6 +2,9 @@ var cc = require('./command_classes/');
 var iface = require('./interface');
 var functions = require('./functions/functions');
 
+var EventEmitter = require('events').EventEmitter;
+EVENTS = new EventEmitter();
+
 var zwave = {};
 
 // Basic functions
